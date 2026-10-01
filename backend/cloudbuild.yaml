@@ -1,0 +1,39 @@
+# Builds the backend image and rolls out a new Cloud Run revision.
+# Run by a Cloud Build trigger on pushes to main that touch backend/**.
+# Environment variables and secrets are set once on the service (see README)
+# and are kept across revisions: this file only changes the image.
+
+substitutions:
+  _REGION: asia-southeast2
+  _SERVICE: cv-backend
+  _REPO: cv-backend
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    dir: backend
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
+      - --region=${_REGION}
+      - --quiet
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
+
+options:
+  logging: CLOUD_LOGGING_ONLY
