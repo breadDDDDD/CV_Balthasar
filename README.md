@@ -8,6 +8,8 @@
 
 *Biel, reading through your CV before a recruiter does.*
 
+### [Try it live → cv-balthasar.vercel.app](https://cv-balthasar.vercel.app/)
+
 </div>
 
 Balthasar is a CV editor. Open the CV you already have (PDF, DOCX, TXT, MD, RTF or ODT) and it is
@@ -75,6 +77,9 @@ rewrites that you accept or reject one by one.
 Details: [backend/README.md](backend/README.md#ai-guardrails).
 
 ## Quick start
+
+The app is live at **https://cv-balthasar.vercel.app/**, so you only need the steps below to run
+it yourself.
 
 You need Docker (or [uv](https://docs.astral.sh/uv/)) for the backend and Node 20+ for the UI.
 
