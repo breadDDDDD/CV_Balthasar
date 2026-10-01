@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ cv.header.name or "CV" }}</title>
+<style>
+@page { size: {{ page_w }}mm {{ page_h }}mm; margin: {{ s.margin_mm }}mm; }
+* { box-sizing: border-box; }
+html { font-size: {{ s.font_size_pt }}pt; }
+body {
+  margin: 0;
+  font-family: {{ font_stack }};
+  font-size: 1rem;
+  line-height: {{ s.line_height }};
+  color: #111;
+  overflow-wrap: break-word;
+  text-align: {{ s.text_align }};
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+h1, h2, p, ul { margin: 0; padding: 0; }
+a { color: inherit; text-decoration: none; }
+
+.cv-header { text-align: {{ s.name_align }}; }
+.name { font-size: 2rem; line-height: 1.15; font-weight: 700; color: {{ s.accent_color }}; margin-bottom: 0.35rem; }
+.headline { font-weight: 700; }
+.contacts .sep { padding: 0 0.15em; }
+/* A contact wraps to the next line as a whole instead of breaking in the middle. */
+.contacts .contact { display: inline-block; }
+
+.section { margin-top: 1.1rem; }
+.section.untitled { margin-top: 0.9rem; }
+.section-title {
+  font-size: 1.25rem;
+  line-height: 1.2;
+  font-weight: 700;
+  color: {{ s.accent_color }};
+  margin-bottom: 0.6rem;
+  break-after: avoid;
+{%- if s.heading_style == "rule" %}
+  padding-bottom: 0.2rem;
+  border-bottom: 0.75pt solid {{ s.accent_color }};
+{%- endif %}
+}
+.section-title a { font-weight: 400; font-size: 1rem; }
+.text { white-space: pre-line; }
+
+.item { margin-top: 0.6rem; }
+.item:first-child, .section-title + .item { margin-top: 0; }
+.row { display: flex; justify-content: space-between; align-items: baseline; gap: 1.5rem; break-after: avoid; }
+.row { text-align: left; }
+.row .right { flex: none; white-space: nowrap; text-align: right; }
+.title { font-weight: 700; }
+.line { break-inside: avoid; }
+
+/* Real list markup: the glyph sits in the gutter and wrapped lines hang under the text. */
+.bullets { list-style: disc outside; padding-left: 2.6rem; }
+.bullets li { padding-left: 0.2rem; break-inside: avoid; }
+.section > .bullets { margin-top: 0; }
+p, li { orphans: 2; widows: 2; }
+
+@media screen {
+  html { background: transparent; }
+  .page {
+    width: {{ page_w }}mm;
+    min-height: {{ page_h }}mm;
+    margin: 0 auto;
+    padding: {{ s.margin_mm }}mm;
+    background: #fff;
+  }
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="cv-header" data-id="header">
+    {%- if cv.header.name %}<h1 class="name">{{ cv.header.name }}</h1>{% endif %}
+    {%- if cv.header.headline %}<p class="headline">{{ cv.header.headline }}</p>{% endif %}
+    {%- if cv.header.contacts %}
+    <p class="contacts">
+      {%- for c in cv.header.contacts -%}
+      {%- if not loop.first %}<span class="sep"> | </span>{% endif -%}
+      <span class="contact" data-id="{{ c.id }}">{% if c.url|safe_url %}<a href="{{ c.url|safe_url }}">{{ c.text }}</a>{% else %}{{ c.text }}{% endif %}</span>
+      {%- endfor -%}
+    </p>
+    {%- endif %}
+  </header>
+  {%- for sec in cv.sections %}
+  <section class="section{% if not (sec.show_title and sec.title) %} untitled{% endif %}" data-id="{{ sec.id }}" data-type="{{ sec.type }}">
+    {%- if sec.show_title and sec.title %}
+    <h2 class="section-title">{{ sec.title }}{% if sec.title_url|safe_url %} <a href="{{ sec.title_url|safe_url }}">[ {{ sec.title_url|display_url }} ]</a>{% endif %}</h2>
+    {%- endif %}
+    {%- if sec.text %}<p class="text">{{ sec.text }}</p>{% endif %}
+    {%- if sec.bullets %}
+    <ul class="bullets">
+      {%- for b in sec.bullets %}<li data-id="{{ b.id }}">{{ b.text }}</li>{% endfor -%}
+    </ul>
+    {%- endif %}
+    {%- for item in sec.items %}
+    <div class="item" data-id="{{ item.id }}">
+      {%- if item.title or item.date %}
+      <div class="row"><span class="title">{{ item.title }}</span>{% if item.date %}<span class="right date">{{ item.date }}</span>{% endif %}</div>
+      {%- endif %}
+      {%- if item.subtitle or item.location %}
+      <div class="row"><span class="subtitle">{{ item.subtitle }}</span>{% if item.location %}<span class="right location">{{ item.location }}</span>{% endif %}</div>
+      {%- endif %}
+      {%- for l in item.lines %}<p class="line" data-id="{{ l.id }}">{{ l.text }}</p>{% endfor %}
+      {%- if item.bullets %}
+      <ul class="bullets">
+        {%- for b in item.bullets %}<li data-id="{{ b.id }}">{{ b.text }}</li>{% endfor -%}
+      </ul>
+      {%- endif %}
+    </div>
+    {%- endfor %}
+  </section>
+  {%- endfor %}
+</main>
+</body>
+</html>
