@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Check, SendHorizontal, X } from 'lucide-react'
 import type { CV, ChatAction, ChatMessage, ChatTarget, Edit, EditStatus, Meta, Review } from '../types'
 import { applyEdit, currentValue, uid, type Update } from '../store'
-import { ApiError, chat, reviewCv } from '../api'
+import { ApiError, chat } from '../api'
+import { reviewCv } from '../review'
 import { Mascot, type MascotMood } from './Mascot'
 
 const GREETING: ChatMessage = {
@@ -182,19 +183,12 @@ export function Chat({ cv, update, meta, open, onOpenChange, target, onClearTarg
     }
   }
 
-  async function freeCheck() {
+  // Runs in the browser (review.ts): no request, so it works even while the backend is asleep.
+  function freeCheck() {
     if (loading) return
     push({ role: 'user', text: 'Run the quick check' })
-    setLoading(true)
-    try {
-      const review = await reviewCv(cv)
-      push({ role: 'assistant', text: 'Here is the rule-based check. It does not use AI.', review, free: true })
-      setTalking(true)
-    } catch (err) {
-      fail(err)
-    } finally {
-      setLoading(false)
-    }
+    push({ role: 'assistant', text: 'Here is the rule-based check. It does not use AI.', review: reviewCv(cv), free: true })
+    setTalking(true)
   }
 
   const setStatus = (messageId: string, editIds: string[], status: EditStatus) =>

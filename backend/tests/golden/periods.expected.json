@@ -1,0 +1,63 @@
+{
+  "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>  Spaced  Name </title>\n<style>\n@page { size: 210.0mm 297.0mm; margin: 5.0mm; }\n* { box-sizing: border-box; }\nhtml { font-size: 7.0pt; }\nbody {\n  margin: 0;\n  font-family: 'Times New Roman', 'Liberation Serif', Tinos, Times, serif;\n  font-size: 1rem;\n  line-height: 2.0;\n  color: #111;\n  overflow-wrap: break-word;\n  text-align: left;\n  -webkit-print-color-adjust: exact;\n  print-color-adjust: exact;\n}\nh1, h2, p, ul { margin: 0; padding: 0; }\na { color: inherit; text-decoration: none; }\n\n.cv-header { text-align: left; }\n.name { font-size: 2rem; line-height: 1.15; font-weight: 700; color: #111111; margin-bottom: 0.35rem; }\n.headline { font-weight: 700; }\n.contacts .sep { padding: 0 0.15em; }\n/* A contact wraps to the next line as a whole instead of breaking in the middle. */\n.contacts .contact { display: inline-block; }\n\n.section { margin-top: 1.1rem; }\n.section.untitled { margin-top: 0.9rem; }\n.section-title {\n  font-size: 1.25rem;\n  line-height: 1.2;\n  font-weight: 700;\n  color: #111111;\n  margin-bottom: 0.6rem;\n  break-after: avoid;  padding-bottom: 0.2rem;\n  border-bottom: 0.75pt solid #111111;}\n.section-title a { font-weight: 400; font-size: 1rem; }\n.text { white-space: pre-line; }\n\n.item { margin-top: 0.6rem; }\n.item:first-child, .section-title + .item { margin-top: 0; }\n.row { display: flex; justify-content: space-between; align-items: baseline; gap: 1.5rem; break-after: avoid; }\n.row { text-align: left; }\n.row .right { flex: none; white-space: nowrap; text-align: right; }\n.title { font-weight: 700; }\n.line { break-inside: avoid; }\n\n/* Real list markup: the glyph sits in the gutter and wrapped lines hang under the text. */\n.bullets { list-style: disc outside; padding-left: 2.6rem; }\n.bullets li { padding-left: 0.2rem; break-inside: avoid; }\n.section > .bullets { margin-top: 0; }\np, li { orphans: 2; widows: 2; }\n\n@media screen {\n  html { background: transparent; }\n  .page {\n    width: 210.0mm;\n    min-height: 297.0mm;\n    margin: 0 auto;\n    padding: 5.0mm;\n    background: #fff;\n  }\n}\n</style>\n</head>\n<body>\n<main class=\"page\">\n  <header class=\"cv-header\" data-id=\"header\"><h1 class=\"name\">  Spaced  Name </h1>    <p class=\"contacts\"><span class=\"contact\" data-id=\"ctc_x\">x@example.com</span></p>  </header>  <section class=\"section\" data-id=\"sec_exp\" data-type=\"experience\">    <h2 class=\"section-title\">Work</h2>    <div class=\"item\" data-id=\"itm_1\">      <div class=\"row\"><span class=\"title\">Company</span><span class=\"right date\">2020</span></div><p class=\"line\" data-id=\"lin_1\">Line keeps its period.</p>      <ul class=\"bullets\"><li data-id=\"blt_1\">Increased revenue by 25% in 2021</li><li data-id=\"blt_2\">Grew the team to 12 people</li><li data-id=\"blt_3\">Managed vendors</li><li data-id=\"blt_4\">Designed it..</li><li data-id=\"blt_5\">Short one</li></ul>    </div>  </section></main>\n</body>\n</html>",
+  "review": {
+    "scores": {
+      "star": 60,
+      "concision": 100,
+      "impact": 40,
+      "overall": 64
+    },
+    "summary": "2 of 5 achievement bullets show a measurable result and 4 start with a strong action verb.",
+    "findings": [
+      {
+        "target_id": null,
+        "severity": "info",
+        "code": "no_summary",
+        "message": "Consider adding a 2-3 line professional summary."
+      },
+      {
+        "target_id": "blt_3",
+        "severity": "info",
+        "code": "no_metric",
+        "message": "No measurable Result. Add a number, percentage, scale or outcome."
+      },
+      {
+        "target_id": "blt_3",
+        "severity": "info",
+        "code": "too_short",
+        "message": "Too short to show situation, action and result."
+      },
+      {
+        "target_id": "blt_4",
+        "severity": "info",
+        "code": "no_metric",
+        "message": "No measurable Result. Add a number, percentage, scale or outcome."
+      },
+      {
+        "target_id": "blt_4",
+        "severity": "info",
+        "code": "too_short",
+        "message": "Too short to show situation, action and result."
+      },
+      {
+        "target_id": "blt_5",
+        "severity": "info",
+        "code": "no_action_verb",
+        "message": "Start with a past-tense action verb to state the Action clearly."
+      },
+      {
+        "target_id": "blt_5",
+        "severity": "info",
+        "code": "no_metric",
+        "message": "No measurable Result. Add a number, percentage, scale or outcome."
+      },
+      {
+        "target_id": "blt_5",
+        "severity": "info",
+        "code": "too_short",
+        "message": "Too short to show situation, action and result."
+      }
+    ]
+  },
+  "filename": "CV___Spaced__Name"
+}

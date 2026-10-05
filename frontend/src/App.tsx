@@ -33,6 +33,8 @@ export default function App() {
   const exportRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  // The one request on page load. It also wakes the backend while the user picks a file, so
+  // there is no separate warm-up or health ping: after this, only user actions call the API.
   useEffect(() => {
     getMeta().then(setMeta, () => setMeta(null))
   }, [])

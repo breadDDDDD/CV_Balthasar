@@ -136,6 +136,14 @@ class RenderResponse(Model):
     page_count: int | None = None
 
 
+class PagesRequest(Model):
+    cv: CV
+
+
+class PagesResponse(Model):
+    page_count: int | None = None
+
+
 class ExportRequest(Model):
     cv: CV
     format: Literal["pdf", "docx", "html"]

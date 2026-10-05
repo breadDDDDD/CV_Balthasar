@@ -188,6 +188,14 @@ def test_export_html_and_filename(client, cv):
     assert 'filename="My_CV_final.html"' in res.headers["content-disposition"]
 
 
+def test_pages(client, cv):
+    res = client.post("/api/pages", json={"cv": cv})
+    assert res.status_code == 200
+    assert res.json() == {"page_count": 1 if pdf_available() else None}
+    # Same document again: answered from the digest cache, same result.
+    assert client.post("/api/pages", json={"cv": cv}).json() == res.json()
+
+
 def test_gzip_only_for_rendered_html(client, cv):
     gzip = {"Accept-Encoding": "gzip"}
     res = client.post("/api/render", json={"cv": cv, "page_count": False}, headers=gzip)

@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "header": {
+    "name": "Ana <script>alert(\"x\")</script> & O'Neil",
+    "headline": "",
+    "contacts": [
+      { "id": "ctc_a", "kind": "website", "text": "evil.example", "url": "javascript:alert(1)" },
+      { "id": "ctc_b", "kind": "other", "text": "   ", "url": "https://dropped.example" },
+      { "id": "ctc_c", "kind": "linkedin", "text": "in/ana \"quoted\"", "url": "  HTTPS://linkedin.com/in/ana?a=1&b=2  " }
+    ]
+  },
+  "sections": [
+    {
+      "id": "sec_proj", "type": "projects", "title": "Projects & <Things>", "title_url": "mailto:ana@example.com", "show_title": true, "visible": true,
+      "text": "",
+      "bullets": [
+        { "id": "blt_a", "text": "  Shipped   a\ttool with   spaces  " },
+        { "id": "blt_b", "text": "Wrote docs..." },
+        { "id": "blt_c", "text": "Asked why?" },
+        { "id": "blt_d", "text": "   " },
+        { "id": "blt_e", "text": "Ends with a period ." }
+      ],
+      "items": [
+        { "id": "itm_empty", "title": "", "subtitle": "", "date": "", "location": "", "lines": [ { "id": "lin_e", "text": " " } ], "bullets": [ { "id": "blt_f", "text": "" } ] },
+        { "id": "itm_loc", "title": "", "subtitle": "", "date": "", "location": "Bandung", "lines": [], "bullets": [] },
+        { "id": "itm_date", "title": "", "subtitle": "", "date": "2024", "location": "", "lines": [], "bullets": [ { "id": "blt_g", "text": "Reduced costs by $3k" } ] }
+      ]
+    },
+    {
+      "id": "sec_custom", "type": "custom", "title": "", "title_url": "ftp://not-allowed.example", "show_title": true, "visible": true,
+      "text": "Line one\n\nLine three with <b>tags</b>", "bullets": [], "items": []
+    },
+    {
+      "id": "sec_vol", "type": "volunteer", "title": "Volunteering", "title_url": "https://x.example", "show_title": false, "visible": true,
+      "text": "", "bullets": [ { "id": "blt_h", "text": "Organised a meetup for 200 people." } ], "items": []
+    }
+  ],
+  "style": {
+    "page_size": "Letter", "margin_mm": 20.5, "font": "cambria", "font_size_pt": 11.5, "line_height": 1.45,
+    "accent_color": "#1A2B3C", "heading_style": "plain", "name_align": "center", "text_align": "justify", "bullet_period": "add"
+  }
+}

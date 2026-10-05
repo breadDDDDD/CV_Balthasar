@@ -1,0 +1,22 @@
+{
+  "header": { "name": "  Spaced  Name ", "contacts": [ { "id": "ctc_x", "text": "x@example.com", "kind": "email" } ] },
+  "sections": [
+    {
+      "id": "sec_exp", "type": "experience", "title": "Work",
+      "items": [
+        {
+          "id": "itm_1", "title": "Company", "date": "2020",
+          "bullets": [
+            { "id": "blt_1", "text": "Increased revenue by 25% in 2021." },
+            { "id": "blt_2", "text": "Grew the team to 12 people" },
+            { "id": "blt_3", "text": "Managed vendors" },
+            { "id": "blt_4", "text": "Designed it.." },
+            { "id": "blt_5", "text": "Short one." }
+          ],
+          "lines": [ { "id": "lin_1", "text": "Line keeps its period." } ]
+        }
+      ]
+    }
+  ],
+  "style": { "bullet_period": "remove", "font": "times", "margin_mm": 5, "font_size_pt": 7, "line_height": 2 }
+}

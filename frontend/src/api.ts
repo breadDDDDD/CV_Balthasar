@@ -5,9 +5,8 @@ import type {
   ExportFormat,
   Meta,
   ParseResult,
-  RenderResult,
-  Review,
 } from './types'
+import { exportBasename, renderHtml, withDefaults } from './render'
 
 const BASE = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000').replace(/\/$/, '')
 
@@ -98,10 +97,9 @@ export async function parseFile(file: File, ai = false): Promise<ParseResult> {
 export const parseText = async (text: string, ai: boolean): Promise<ParseResult> =>
   (await (ai ? aiRequest : request)('/api/parse/text', jsonInit({ text, ai }))).json()
 
-export const renderCv = async (cv: CV, signal?: AbortSignal): Promise<RenderResult> =>
-  (await postJson('/api/render', { cv, page_count: true }, signal)).json()
-
-export const reviewCv = async (cv: CV): Promise<Review> => (await postJson('/api/review', { cv })).json()
+/** The real PDF page count. The preview itself is drawn in the browser (render.ts). */
+export const countPages = async (cv: CV, signal?: AbortSignal): Promise<number | null> =>
+  ((await (await postJson('/api/pages', { cv }, signal)).json()) as { page_count: number | null }).page_count
 
 export async function chat(body: {
   cv: CV
@@ -117,6 +115,11 @@ export async function exportCv(
   format: ExportFormat,
   signal?: AbortSignal,
 ): Promise<{ blob: Blob; filename: string }> {
+  // The HTML export is the preview document itself, so it is made here without a request.
+  if (format === 'html') {
+    const blob = new Blob([renderHtml(cv)], { type: 'text/html;charset=utf-8' })
+    return { blob, filename: `${exportBasename(withDefaults(cv))}.html` }
+  }
   const res = await postJson('/api/export', { cv, format }, signal)
   const disposition = res.headers.get('Content-Disposition') ?? ''
   const match = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(disposition)

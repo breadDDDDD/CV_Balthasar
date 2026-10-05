@@ -1,16 +1,28 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring } from 'motion/react'
 import { Minus, Plus, SlidersHorizontal } from 'lucide-react'
 import type { CV, Meta, Style } from '../types'
 import type { Update } from '../store'
-import { ApiError, exportCv, renderCv } from '../api'
+import { ApiError, countPages, exportCv } from '../api'
+import { renderHtml } from '../render'
 
 const PAGE_WIDTH_PX = { A4: 793.7, Letter: 816 }
-const RENDER_DEBOUNCE_MS = 400
+// The page count is the only thing typing asks the backend for, once the user pauses.
+const PAGES_IDLE_MS = 1500
 const PDF_DEBOUNCE_MS = 900
+const PAGE_CACHE_LIMIT = 60
 const TILT_DEG = 1.6
 
-// Added to the backend's document so the element being edited is easy to find on the page.
+// Page counts by the HTML they were counted for, for the life of the tab: undo, redo and
+// switching a setting back reuse a count instead of waking the backend again.
+const pageCounts = new Map<string, number | null>()
+function rememberPages(html: string, pages: number | null) {
+  pageCounts.delete(html)
+  pageCounts.set(html, pages)
+  if (pageCounts.size > PAGE_CACHE_LIMIT) pageCounts.delete(pageCounts.keys().next().value!)
+}
+
+// Added to the rendered document so the element being edited is easy to find on the page.
 const HIGHLIGHT_CSS = `
   [data-active] { background: rgba(137, 49, 114, 0.13); box-shadow: 0 0 0 3px rgba(137, 49, 114, 0.13); border-radius: 2px; }
   [data-id] { transition: background 0.25s ease, box-shadow 0.25s ease; }
@@ -171,10 +183,12 @@ export function Preview({ cv, update, activeId, meta }: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const frameRef = useRef<HTMLIFrameElement>(null)
   const [frameReady, setFrameReady] = useState(false)
-  const [html, setHtml] = useState<string | null>(null)
-  const [pageCount, setPageCount] = useState<number | null>(null)
-  const [settled, setSettled] = useState<CV | null>(null)
-  const busy = settled !== cv
+  // Drawn here, on every change: no request. Deferred so typing stays smooth on long CVs.
+  const drawnCv = useDeferredValue(cv)
+  const html = useMemo(() => renderHtml(drawnCv), [drawnCv])
+  const wantPages = meta?.pdf_available !== false
+  const [lastPages, setLastPages] = useState<number | null>(null)
+  const [pagesError, setPagesError] = useState<{ html: string; message: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [contentHeight, setContentHeight] = useState(1123)
   const [stageWidth, setStageWidth] = useState(0)
@@ -189,32 +203,31 @@ export function Preview({ cv, update, activeId, meta }: Props) {
   const fit = stageWidth ? Math.min(1, (stageWidth - 72) / pageWidth) : 1
   const scale = fit * zoom
 
-  /* ---- ask the backend for the page, debounced ---- */
+  /* ---- the real page count: one request after the user pauses, never on a timer ---- */
   useEffect(() => {
+    if (!wantPages || pageCounts.has(html)) return
     const controller = new AbortController()
     const timer = setTimeout(async () => {
       try {
-        const result = await renderCv(cv, controller.signal)
-        setHtml(result.html)
-        setPageCount(result.page_count)
-        setError(null)
-        setSettled(cv)
+        const pages = await countPages(drawnCv, controller.signal)
+        rememberPages(html, pages)
+        setLastPages(pages)
+        setPagesError(null)
       } catch (err) {
         if (controller.signal.aborted) return
-        setError(err instanceof ApiError ? err.message : 'The preview could not be drawn.')
-        setSettled(cv)
+        setPagesError({ html, message: err instanceof ApiError ? err.message : 'The page count is not available.' })
       }
-    }, RENDER_DEBOUNCE_MS)
+    }, PAGES_IDLE_MS)
     return () => {
       clearTimeout(timer)
       controller.abort()
     }
-  }, [cv])
+  }, [html, drawnCv, wantPages])
 
   /* ---- swap the document in place, so the page never flashes blank ---- */
   useLayoutEffect(() => {
     const doc = frameRef.current?.contentDocument
-    if (!frameReady || !doc || html === null) return
+    if (!frameReady || !doc) return
     const next = new DOMParser().parseFromString(html, 'text/html')
     const before = new Set(Array.from(doc.querySelectorAll('[data-id]'), (el) => el.getAttribute('data-id')))
     doc.head.innerHTML = next.head.innerHTML
@@ -245,7 +258,7 @@ export function Preview({ cv, update, activeId, meta }: Props) {
   useEffect(() => {
     const doc = frameRef.current?.contentDocument
     const stage = stageRef.current
-    if (!doc || !stage || html === null) return
+    if (!doc || !stage) return
     doc.querySelectorAll('[data-active]').forEach((el) => el.removeAttribute('data-active'))
     if (!activeId || activeId === 'header') return
     const el = doc.querySelector(`[data-id="${CSS.escape(activeId)}"]`)
@@ -317,18 +330,28 @@ export function Preview({ cv, update, activeId, meta }: Props) {
     ry.set(0)
   }
 
-  const status = error
-    ? 'Preview paused'
-    : busy
-      ? 'Updating'
-      : pageCount
-        ? `${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`
+  const pagesLabel = (n: number) => `${n} ${n === 1 ? 'page' : 'pages'}`
+  const exact = pageCounts.get(html)
+  const pagesFailed = pagesError?.html === html
+  const counting = wantPages && exact === undefined && !pagesFailed
+  const status = pagesFailed
+    ? 'Page count unavailable'
+    : exact
+      ? pagesLabel(exact)
+      : counting
+        ? lastPages
+          ? pagesLabel(lastPages)
+          : 'Counting pages'
         : 'Up to date'
 
   return (
     <div className="preview">
       <div className="preview__bar">
-        <span className={`preview__status ${busy && !error ? 'is-busy' : ''} ${error ? 'is-error' : ''}`} aria-live="polite">
+        <span
+          className={`preview__status ${counting ? 'is-busy' : ''} ${pagesFailed ? 'is-error' : ''}`}
+          title={pagesFailed ? pagesError.message : counting ? 'Counting the PDF pages' : undefined}
+          aria-live="polite"
+        >
           {status}
         </span>
         <div className="preview__tools">
@@ -377,9 +400,9 @@ export function Preview({ cv, update, activeId, meta }: Props) {
         </div>
       </div>
 
-      {error && (
+      {error && mode === 'pdf' && (
         <p className="preview__error" role="alert">
-          {error} Your edits are kept in this tab and the preview resumes on the next change.
+          {error} Your edits are kept in this tab and the PDF is made again on the next change.
         </p>
       )}
 
@@ -393,7 +416,7 @@ export function Preview({ cv, update, activeId, meta }: Props) {
         <motion.div
           className="sheet-drop"
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, rotateX: 34, y: 90, scale: 0.94 }}
-          animate={html !== null ? { opacity: 1, rotateX: 0, y: 0, scale: 1 } : undefined}
+          animate={frameReady ? { opacity: 1, rotateX: 0, y: 0, scale: 1 } : undefined}
           transition={{ type: 'spring', bounce: 0.12, duration: 0.9 }}
         >
           <motion.div

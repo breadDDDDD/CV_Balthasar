@@ -91,11 +91,6 @@ export interface ParseResult {
   source_format: string
 }
 
-export interface RenderResult {
-  html: string
-  page_count: number | null
-}
-
 export interface Finding {
   target_id: string | null
   severity: 'info' | 'warn' | 'error'

@@ -1,0 +1,81 @@
+{
+  "html": "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Jane Doe</title>\n<style>\n@page { size: 210.0mm 297.0mm; margin: 12.7mm; }\n* { box-sizing: border-box; }\nhtml { font-size: 10.0pt; }\nbody {\n  margin: 0;\n  font-family: Arial, 'Liberation Sans', Arimo, Helvetica, sans-serif;\n  font-size: 1rem;\n  line-height: 1.3;\n  color: #111;\n  overflow-wrap: break-word;\n  text-align: left;\n  -webkit-print-color-adjust: exact;\n  print-color-adjust: exact;\n}\nh1, h2, p, ul { margin: 0; padding: 0; }\na { color: inherit; text-decoration: none; }\n\n.cv-header { text-align: left; }\n.name { font-size: 2rem; line-height: 1.15; font-weight: 700; color: #111111; margin-bottom: 0.35rem; }\n.headline { font-weight: 700; }\n.contacts .sep { padding: 0 0.15em; }\n/* A contact wraps to the next line as a whole instead of breaking in the middle. */\n.contacts .contact { display: inline-block; }\n\n.section { margin-top: 1.1rem; }\n.section.untitled { margin-top: 0.9rem; }\n.section-title {\n  font-size: 1.25rem;\n  line-height: 1.2;\n  font-weight: 700;\n  color: #111111;\n  margin-bottom: 0.6rem;\n  break-after: avoid;  padding-bottom: 0.2rem;\n  border-bottom: 0.75pt solid #111111;}\n.section-title a { font-weight: 400; font-size: 1rem; }\n.text { white-space: pre-line; }\n\n.item { margin-top: 0.6rem; }\n.item:first-child, .section-title + .item { margin-top: 0; }\n.row { display: flex; justify-content: space-between; align-items: baseline; gap: 1.5rem; break-after: avoid; }\n.row { text-align: left; }\n.row .right { flex: none; white-space: nowrap; text-align: right; }\n.title { font-weight: 700; }\n.line { break-inside: avoid; }\n\n/* Real list markup: the glyph sits in the gutter and wrapped lines hang under the text. */\n.bullets { list-style: disc outside; padding-left: 2.6rem; }\n.bullets li { padding-left: 0.2rem; break-inside: avoid; }\n.section > .bullets { margin-top: 0; }\np, li { orphans: 2; widows: 2; }\n\n@media screen {\n  html { background: transparent; }\n  .page {\n    width: 210.0mm;\n    min-height: 297.0mm;\n    margin: 0 auto;\n    padding: 12.7mm;\n    background: #fff;\n  }\n}\n</style>\n</head>\n<body>\n<main class=\"page\">\n  <header class=\"cv-header\" data-id=\"header\"><h1 class=\"name\">Jane Doe</h1><p class=\"headline\">Senior Data Engineer</p>    <p class=\"contacts\"><span class=\"contact\" data-id=\"ctc_1\"><a href=\"tel:+6281234567890\">+62 812 3456 7890</a></span><span class=\"sep\"> | </span><span class=\"contact\" data-id=\"ctc_2\"><a href=\"mailto:jane.doe@example.com\">jane.doe@example.com</a></span><span class=\"sep\"> | </span><span class=\"contact\" data-id=\"ctc_3\">Jakarta, Indonesia</span><span class=\"sep\"> | </span><span class=\"contact\" data-id=\"ctc_4\"><a href=\"https://github.com/janedoe\">github.com/janedoe</a></span></p>  </header>  <section class=\"section untitled\" data-id=\"sec_sum\" data-type=\"summary\"><p class=\"text\">Data engineer with eight years of experience building analytics platforms.\nFocused on reliable pipelines.</p>  </section>  <section class=\"section\" data-id=\"sec_exp\" data-type=\"experience\">    <h2 class=\"section-title\">EXPERIENCE <a href=\"https://github.com/janedoe/\">[ github.com/janedoe ]</a></h2>    <div class=\"item\" data-id=\"itm_acme\">      <div class=\"row\"><span class=\"title\">Acme Corp, Data Engineer</span><span class=\"right date\">Jan 2022 - Present</span></div>      <div class=\"row\"><span class=\"subtitle\">Platform Team</span><span class=\"right location\">Remote</span></div>      <ul class=\"bullets\"><li data-id=\"blt_1\">Built a streaming pipeline that cut reporting latency by 40%.</li><li data-id=\"blt_2\">Responsible for the nightly batch jobs</li><li data-id=\"blt_3\">Led a team of 5 engineers to migrate 120 dashboards.</li><li data-id=\"blt_4\">I helped with things</li></ul>    </div>    <div class=\"item\" data-id=\"itm_globex\">      <div class=\"row\"><span class=\"title\">Globex</span></div>      <div class=\"row\"><span class=\"subtitle\">Analyst</span></div>      <ul class=\"bullets\"><li data-id=\"blt_5\">Worked on ad-hoc reports for the sales, finance, marketing, operations, legal and executive teams across three regions every single week of the year without fail ever</li></ul>    </div>    <div class=\"item\" data-id=\"itm_initech\">      <div class=\"row\"><span class=\"title\">Initech</span><span class=\"right date\">2018</span></div>      <div class=\"row\"><span class=\"subtitle\">Intern</span></div>    </div>  </section>  <section class=\"section\" data-id=\"sec_edu\" data-type=\"education\">    <h2 class=\"section-title\">EDUCATION</h2>    <div class=\"item\" data-id=\"itm_uni\">      <div class=\"row\"><span class=\"title\">State University, BSc Computer Science</span><span class=\"right date\">2015 - 2019</span></div><p class=\"line\" data-id=\"lin_1\">GPA: 3.8/4</p>    </div>  </section>  <section class=\"section\" data-id=\"sec_skl\" data-type=\"skills\">    <h2 class=\"section-title\">SKILLS</h2><p class=\"text\">Languages: Python, SQL, Go\nTools: Airflow, dbt, Docker</p>  </section></main>\n</body>\n</html>",
+  "review": {
+    "scores": {
+      "star": 40,
+      "concision": 100,
+      "impact": 40,
+      "overall": 52
+    },
+    "summary": "2 of 5 achievement bullets show a measurable result and 2 start with a strong action verb.",
+    "findings": [
+      {
+        "target_id": "itm_globex",
+        "severity": "info",
+        "code": "no_date",
+        "message": "\"Globex\" has no date."
+      },
+      {
+        "target_id": "itm_initech",
+        "severity": "warn",
+        "code": "no_bullets",
+        "message": "\"Initech\" has no bullet points describing what you achieved."
+      },
+      {
+        "target_id": "blt_2",
+        "severity": "warn",
+        "code": "weak_opener",
+        "message": "\"Responsible\" is a weak opener; lead with what you did (Built, Led, Reduced...)."
+      },
+      {
+        "target_id": "blt_2",
+        "severity": "info",
+        "code": "no_metric",
+        "message": "No measurable Result. Add a number, percentage, scale or outcome."
+      },
+      {
+        "target_id": "blt_4",
+        "severity": "warn",
+        "code": "first_person",
+        "message": "Avoid first-person pronouns; start with the action verb."
+      },
+      {
+        "target_id": "blt_4",
+        "severity": "info",
+        "code": "no_action_verb",
+        "message": "Start with a past-tense action verb to state the Action clearly."
+      },
+      {
+        "target_id": "blt_4",
+        "severity": "info",
+        "code": "no_metric",
+        "message": "No measurable Result. Add a number, percentage, scale or outcome."
+      },
+      {
+        "target_id": "blt_4",
+        "severity": "info",
+        "code": "too_short",
+        "message": "Too short to show situation, action and result."
+      },
+      {
+        "target_id": "blt_5",
+        "severity": "warn",
+        "code": "weak_opener",
+        "message": "\"Worked\" is a weak opener; lead with what you did (Built, Led, Reduced...)."
+      },
+      {
+        "target_id": "blt_5",
+        "severity": "info",
+        "code": "no_metric",
+        "message": "No measurable Result. Add a number, percentage, scale or outcome."
+      },
+      {
+        "target_id": null,
+        "severity": "warn",
+        "code": "inconsistent_period",
+        "message": "2 bullet(s) end differently from the rest (trailing period). Set style.bullet_period to \"add\" or \"remove\" to make them consistent."
+      }
+    ]
+  },
+  "filename": "CV_Jane_Doe"
+}

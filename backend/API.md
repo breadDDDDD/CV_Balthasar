@@ -177,6 +177,12 @@ Body `{ "cv": CV, "page_count": true }` → `{ "html": "<!doctype html>...", "pa
 - Every rendered element carries `data-id="<section/item/bullet id>"` so the preview can
   highlight or scroll to what is being edited.
 
+### `POST /api/pages`
+Body `{ "cv": CV }` → `{ "page_count": 2 }`. The real PDF page count without the HTML, for a UI
+that draws the preview itself (see "Rendering in the browser"). `null` when the PDF engine is
+unavailable. Counts are cached in memory by a digest of the HTML, so repeats are cheap. Ask once
+typing has stopped (~1.5 s idle), never on a timer.
+
 ### `POST /api/export`
 Body `{ "cv": CV, "format": "pdf" | "docx" | "html", "filename": "optional-base-name" }` →
 the file, with `Content-Disposition: attachment; filename="..."` (exposed via CORS) and the right
@@ -262,6 +268,21 @@ them. The server validates every edit against the CV you sent and drops invalid 
 - An unknown `target_id` is treated as null.
 - An AI re-parse that rewrites the wording instead of copying it is discarded (`ai_error`).
 
+## Rendering in the browser (v1.4)
+
+The UI draws the preview and the HTML export itself (`frontend/src/render.ts`) and runs the quick
+check itself (`frontend/src/review.ts`), so typing and checking send nothing to the backend. The
+backend keeps the reference implementation, and still renders the PDF, the DOCX and the page count.
+
+- `backend/tests/golden/` holds the shared fixtures: `<case>.cv.json` and, generated from the
+  backend code, `<case>.expected.json` with `html`, `review` and `filename`. Both test suites must
+  pass on them: `uv run pytest` here and `npm test` in `frontend/`.
+- Changing the template, `render/common.py` or `review.py` changes the fixtures. Regenerate them
+  with `UPDATE_GOLDEN=1 uv run pytest tests/test_golden.py`, then update the TypeScript ports until
+  `npm test` passes. The frontend compares HTML with whitespace between tags and inside `<style>`
+  collapsed; text and attributes must match exactly.
+- `/api/render` and `/api/review` stay available and unchanged.
+
 ## Stability guarantees the UI depends on
 
 These will not change without a message to the UI agent first:
@@ -272,6 +293,7 @@ These will not change without a message to the UI agent first:
 - `ai_enabled`, `ai_mock` and `pdf_available` in `/api/meta`.
 
 ## Changelog
+- v1.4: `POST /api/pages` (page count only); the UI renders the preview and runs the quick check in the browser, kept identical by the shared fixtures in `tests/golden/`.
 - v1.3: access control: origin check on all endpoints, `GET /api/session` + `X-CV-Session` header for AI calls, rate limits on every endpoint; new error codes `invalid_session` (401) and `forbidden_origin` (403).
 - v1.2: AI guardrails; `ai_model` in `/api/meta`; new error code `ai_blocked` (422).
 - v1.1: added `style.text_align`; item dates render in regular weight; stability guarantees listed.

@@ -22,6 +22,8 @@ from .models import (
     ExportRequest,
     ParseResponse,
     ParseTextRequest,
+    PagesRequest,
+    PagesResponse,
     RenderRequest,
     RenderResponse,
     Review,
@@ -257,6 +259,13 @@ def render(body: RenderRequest, cfg: Settings = Depends(get_settings)) -> Render
     html = render_html(body.cv)
     pages = count_pages(html) if body.page_count and pdf_available() else None
     return RenderResponse(html=html, page_count=pages)
+
+
+@app.post("/api/pages", response_model=PagesResponse)
+def pages(body: PagesRequest, cfg: Settings = Depends(get_settings)) -> PagesResponse:
+    """Page count only: the UI draws the preview itself and asks for this once typing stops."""
+    _guard_size(body.cv, cfg)
+    return PagesResponse(page_count=count_pages(render_html(body.cv)) if pdf_available() else None)
 
 
 _MEDIA = {

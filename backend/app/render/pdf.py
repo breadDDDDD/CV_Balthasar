@@ -6,6 +6,9 @@ Windows machine the import fails and PDF features report themselves unavailable.
 
 from __future__ import annotations
 
+import hashlib
+import threading
+from collections import OrderedDict
 from functools import lru_cache
 
 
@@ -43,5 +46,22 @@ def html_to_pdf(html: str) -> bytes:
     return _document(html).write_pdf()
 
 
+# Page counts by digest of the HTML, so undo, redo and repeated edits skip the layout.
+# Memory only, and it holds digests and numbers, never CV text.
+_PAGE_CACHE_SIZE = 512
+_page_cache: OrderedDict[str, int] = OrderedDict()
+_page_lock = threading.Lock()
+
+
 def count_pages(html: str) -> int:
-    return len(_document(html).pages)
+    key = hashlib.sha256(html.encode("utf-8")).hexdigest()
+    with _page_lock:
+        if key in _page_cache:
+            _page_cache.move_to_end(key)
+            return _page_cache[key]
+    pages = len(_document(html).pages)
+    with _page_lock:
+        _page_cache[key] = pages
+        if len(_page_cache) > _PAGE_CACHE_SIZE:
+            _page_cache.popitem(last=False)
+    return pages
