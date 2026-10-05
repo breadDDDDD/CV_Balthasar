@@ -14,7 +14,7 @@ from collections import defaultdict, deque
 
 from pydantic import ValidationError
 
-from . import guardrails
+from . import guardrails, usage
 from .config import Settings
 from .models import CV, ChatRequest, ChatResponse, Contact, Edit, Review, Section
 from .review import review_cv
@@ -155,10 +155,12 @@ def _generate(settings: Settings, system: str | None, turns: list[tuple[str, str
     from google.genai import errors, types
 
     client = genai.Client(api_key=settings.gemini_api_key, http_options=types.HttpOptions(timeout=60_000))
+    # Re-resolved here so no code path can reach a model outside the allow-list.
+    model = guardrails.resolve_model(settings.gemini_model)
+    started = time.monotonic()
     try:
         response = client.models.generate_content(
-            # Re-resolved here so no code path can reach a model outside the allow-list.
-            model=guardrails.resolve_model(settings.gemini_model),
+            model=model,
             contents=[types.Content(role=role, parts=[types.Part.from_text(text=text)]) for role, text in turns],
             config=types.GenerateContentConfig(
                 system_instruction=system,
@@ -171,14 +173,21 @@ def _generate(settings: Settings, system: str | None, turns: list[tuple[str, str
         )
     except errors.APIError as exc:
         if getattr(exc, "code", None) == 429:
+            usage.record(model, None, started, "provider_rate_limited")
             raise AIError("rate_limited", "The AI provider is rate limiting requests. Try again in a minute.", 429, 60)
+        usage.record(model, None, started, "provider_error")
         raise AIError("ai_error", "The AI provider returned an error. Please try again.")
     except Exception:
+        usage.record(model, None, started, "unreachable")
         raise AIError("ai_error", "Could not reach the AI provider. Please try again.")
     feedback = getattr(response, "prompt_feedback", None)
     candidate = response.candidates[0] if response.candidates else None
     finish = getattr(getattr(candidate, "finish_reason", None), "name", "")
-    if (feedback is not None and feedback.block_reason) or finish in _BLOCKED_FINISH:
+    blocked = (feedback is not None and feedback.block_reason) or finish in _BLOCKED_FINISH
+    outcome = "blocked" if blocked else "max_tokens" if finish == "MAX_TOKENS" else "empty" if not response.text else "ok"
+    # Tokens are billed even when the answer is unusable, so every outcome is recorded.
+    usage.record(model, getattr(response, "usage_metadata", None), started, outcome, finish)
+    if blocked:
         raise AIError("ai_blocked", "The AI declined this request. Rephrase it and keep it about your CV.", 422)
     if finish == "MAX_TOKENS":
         raise AIError("ai_error", "The answer was too long. Ask about one section at a time.")
@@ -315,6 +324,7 @@ def chat(req: ChatRequest, settings: Settings) -> ChatResponse:
         req.target_id = None  # never interpolate an unknown id into the prompt
     if settings.ai_mock:
         return _mock_chat(req)
+    usage.bind(action=req.action)
 
     history = [
         (("user" if m.role == "user" else "model"), m.content.strip()[: settings.ai_max_message_chars])
@@ -393,6 +403,7 @@ def _drop_nulls(value):
 
 
 def parse_with_ai(text: str, settings: Settings) -> CV:
+    usage.bind(action="parse")
     data = _drop_nulls(_loads(_generate(settings, None, [("user", PARSE_PROMPT + text)], temperature=0.0)))
     data.pop("style", None)
     data.pop("version", None)

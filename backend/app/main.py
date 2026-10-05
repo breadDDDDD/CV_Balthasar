@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import ai, security
+from . import ai, security, usage
 from .config import Settings, get_settings
 from .models import (
     CV,
@@ -130,6 +130,7 @@ def _guard_ai(request: Request, cfg: Settings) -> None:
     ip = security.client_ip(request, cfg.trusted_proxy_hops)
     if not security.token_valid(cfg, request.headers.get("x-cv-session"), ip):
         raise ApiError(401, "invalid_session", "The session has expired. Refresh and try again.")
+    usage.bind(visitor=usage.visitor(ip))
     if cfg.ai_mock:
         return
     wait = security.windows.hit(f"ai-day:{ip}", cfg.ai_rate_per_ip_day, 86400)

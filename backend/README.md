@@ -23,6 +23,7 @@ app/
   render/docx.py     CV -> DOCX
   review.py          free rule-based review (STAR, concision, impact)
   ai.py              Gemini chat / rewrite / review / re-parse, rate limiter, mock mode
+  usage.py           token / cost metadata line per Gemini call (see "AI usage tracking")
 tests/               pytest suite; Gemini is stubbed, it can never be called
 ```
 
@@ -86,6 +87,7 @@ that fails the test, so running them costs nothing.
 | `PARSE_RATE_PER_MINUTE` | `12` | Uploads per client IP per minute. |
 | `ENFORCE_ORIGIN` | `1` | Reject calls whose `Origin` is not in `ALLOWED_ORIGINS`. Leave on. |
 | `SESSION_SECRET` | random per instance | Key that signs AI session tokens. Optional; without it tokens simply stop working when the instance restarts and the UI fetches a new one. |
+| `USAGE_HASH_SALT` | random per instance | Salt for the visitor hash in usage records. Set it (any long random string, e.g. as a secret) so the same visitor gets the same hash across instances and restarts. |
 | `SESSION_TTL_SECONDS` | `600` | Lifetime of an AI session token. |
 | `TRUSTED_PROXY_HOPS` | `1` on Cloud Run, else `0` | How many proxies append to `X-Forwarded-For`. Set to `2` if you put a load balancer in front of Cloud Run. |
 | `AI_RATE_PER_DAY` | `150` | Gemini calls per running instance per day. |
@@ -215,6 +217,52 @@ gcloud services enable run.googleapis.com cloudbuild.googleapis.com \
 
 To update, run the same `gcloud run deploy` again. `--source .` stores the built image in Artifact
 Registry (first 0.5 GB free); delete old images there occasionally if you redeploy often.
+
+## AI usage tracking
+
+Every real Gemini call writes one JSON line to stdout. On Cloud Run that becomes a structured
+Cloud Logging entry (`jsonPayload`), which is free up to 50 GiB a month and kept for 30 days. Mock
+mode and tests write nothing. A record holds metadata only, never CV text, prompts or replies:
+
+```json
+{"event":"ai_usage","action":"review","visitor":"3f9c0a1b2c3d4e5f","model":"gemini-3-flash-preview",
+ "outcome":"ok","finish_reason":"STOP","input_tokens":5210,"cached_tokens":0,"response_tokens":812,
+ "thinking_tokens":340,"output_tokens":1152,"total_tokens":6362,"latency_ms":4180,"est_cost_usd":0.006061}
+```
+
+- `action`: `chat`, `rewrite`, `review` or `parse`. `visitor`: salted hash of the client address.
+- `outcome`: `ok`, `blocked`, `max_tokens`, `empty`, `provider_rate_limited`, `provider_error` or
+  `unreachable`. Failed answers are logged too, because their tokens are still billed.
+- `output_tokens` = response + thinking (both billed at the output price). `est_cost_usd` uses the
+  price table in `usage.py`; update it when Google changes prices or you add a model.
+
+View it in Logs Explorer with `jsonPayload.event="ai_usage"`, or from a shell:
+
+```bash
+gcloud logging read 'jsonPayload.event="ai_usage"' --freshness=7d --format=json
+```
+
+**Long-term history in BigQuery (optional, once).** A log sink copies new entries into a dataset;
+storage and queries stay inside the BigQuery free tier (10 GB, 1 TB of queries a month) at this
+volume. The sink only receives entries from the moment it is created.
+
+```bash
+bq --location=asia-southeast2 mk --dataset YOUR_PROJECT_ID:cv_usage
+gcloud logging sinks create cv-ai-usage   bigquery.googleapis.com/projects/YOUR_PROJECT_ID/datasets/cv_usage   --use-partitioned-tables   --log-filter='resource.type="cloud_run_revision" AND jsonPayload.event="ai_usage"'
+# grant the sink's writer identity (printed by the command above) access to the dataset:
+bq add-iam-policy-binding --member='SERVICE_ACCOUNT_PRINTED_ABOVE'   --role=roles/bigquery.dataEditor YOUR_PROJECT_ID:cv_usage
+```
+
+Then, for example, daily totals:
+
+```sql
+SELECT DATE(timestamp) AS day, jsonPayload.action AS action, COUNT(*) AS calls,
+       SUM(jsonPayload.input_tokens) AS input_tokens, SUM(jsonPayload.output_tokens) AS output_tokens,
+       ROUND(SUM(jsonPayload.est_cost_usd), 4) AS est_cost_usd,
+       COUNT(DISTINCT jsonPayload.visitor) AS visitors
+FROM `YOUR_PROJECT_ID.cv_usage.run_googleapis_com_stdout`
+GROUP BY day, action ORDER BY day DESC
+```
 
 ## Notes and limits
 
