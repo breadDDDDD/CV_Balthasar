@@ -3,6 +3,13 @@
   "plugins": ["react", "typescript", "oxc"],
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    "no-restricted-globals": [
+      "error",
+      {
+        "name": "setInterval",
+        "message": "Repeating timers can keep the scale-to-zero backend awake from an idle tab. Use a one-shot setTimeout tied to a user action; see the note in src/api.ts."
+      }
+    ]
   }
 }

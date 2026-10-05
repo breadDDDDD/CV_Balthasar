@@ -196,7 +196,10 @@ gcloud services enable run.googleapis.com cloudbuild.googleapis.com \
    ```
 
    - `--min-instances 0` scales to zero: no charge while idle. The first request after idle takes a
-     few seconds (cold start).
+     few seconds (cold start). `cloudbuild.yaml` re-applies `--min-instances=0 --cpu-throttling`
+     on every deploy, so a change made in the console cannot keep an instance running.
+     The UI only calls the API after a user action (no polling, no keep-alive), so a tab left
+     open with nothing happening sends no requests and the instance shuts down on its own.
    - `--max-instances 1` caps the bill and keeps the rate limits and session tokens accurate
      (they live in the instance's memory). If you ever raise it, set `SESSION_SECRET` so all
      instances sign tokens with the same key.

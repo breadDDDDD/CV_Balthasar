@@ -1,7 +1,7 @@
 # Builds the backend image and rolls out a new Cloud Run revision.
 # Run by a Cloud Build trigger on pushes to main that touch backend/**.
 # Environment variables and secrets are set once on the service (see README)
-# and are kept across revisions: this file only changes the image.
+# and are kept across revisions: this file changes the image and pins scale-to-zero.
 
 substitutions:
   _REGION: asia-southeast2
@@ -30,6 +30,10 @@ steps:
       - ${_SERVICE}
       - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$SHORT_SHA
       - --region=${_REGION}
+      # Re-asserted on every deploy so a console change cannot leave an instance running
+      # while nobody uses the app: scale to zero when idle, CPU billed only during requests.
+      - --min-instances=0
+      - --cpu-throttling
       - --quiet
 
 images:

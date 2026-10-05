@@ -21,6 +21,9 @@ export class ApiError extends Error {
   }
 }
 
+// Every backend call must follow from something the user did (load, upload, edit, export,
+// ask Biel). Never poll, keep alive or refetch on a timer or on tab focus: the backend
+// scales to zero, and an idle tab, even one left open for months, must not keep it running.
 async function request(path: string, init?: RequestInit): Promise<Response> {
   let res: Response
   try {
