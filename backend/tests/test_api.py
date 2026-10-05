@@ -188,6 +188,22 @@ def test_export_html_and_filename(client, cv):
     assert 'filename="My_CV_final.html"' in res.headers["content-disposition"]
 
 
+def test_gzip_only_for_rendered_html(client, cv):
+    gzip = {"Accept-Encoding": "gzip"}
+    res = client.post("/api/render", json={"cv": cv, "page_count": False}, headers=gzip)
+    assert res.headers.get("content-encoding") == "gzip" and "accept-encoding" in res.headers["vary"].lower()
+    assert "<!doctype html>" in res.json()["html"].lower()
+    res = client.post("/api/export", json={"cv": cv, "format": "html"}, headers=gzip)
+    assert res.headers.get("content-encoding") == "gzip"
+    assert res.headers["access-control-allow-origin"] and "filename=" in res.headers["content-disposition"]
+    res = client.post("/api/export", json={"cv": cv, "format": "docx"}, headers=gzip)
+    assert "content-encoding" not in res.headers and res.content[:2] == b"PK"
+    res = client.post("/api/review", json={"cv": cv}, headers=gzip)
+    assert "content-encoding" not in res.headers
+    res = client.post("/api/render", json={"cv": cv, "page_count": False}, headers={"Accept-Encoding": "identity"})
+    assert "content-encoding" not in res.headers
+
+
 @pytest.mark.skipif(not pdf_available(), reason="WeasyPrint native libraries not installed (run in Docker)")
 def test_pdf_export_round_trip(client, cv):
     rendered = client.post("/api/render", json={"cv": cv}).json()

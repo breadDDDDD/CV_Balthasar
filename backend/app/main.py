@@ -9,6 +9,7 @@ from fastapi import Depends, FastAPI, File, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -70,6 +71,29 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["Content-Disposition", "Retry-After"],
     max_age=3600,
+)
+
+
+class _GZipRendered(GZipMiddleware):
+    """Gzips the rendered HTML: the preview and the HTML export. That markup is repetitive
+    and shrinks several times over; PDF and DOCX are already compressed and pass through."""
+
+    PATHS = {"/api/render", "/api/export"}
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["path"] in self.PATHS:
+            await super().__call__(scope, receive, send)
+        else:
+            await self.app(scope, receive, send)
+
+
+# Added last so it is outermost and also compresses responses the inner layers rewrote.
+# Level 6 instead of 9: nearly the same size for much less CPU on a small instance.
+app.add_middleware(
+    _GZipRendered,
+    minimum_size=1000,
+    compresslevel=6,
+    exclude_content_types=("application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
 )
 
 
